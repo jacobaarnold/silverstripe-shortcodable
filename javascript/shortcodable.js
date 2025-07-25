@@ -37,19 +37,19 @@
                 template.find('#shortcode-fields').remove();
 
                 var classElement = $('<div class="field" id="shortcode-class"></div>');
-                var select = $('<select name="class" class="select"><option value="" disabled selected>' + json.phrases['select_shortcode'] + '</option></select>');
+                var select = $('<select name="tag" class="select"><option value="" disabled selected>' + json.phrases['select_shortcode'] + '</option></select>');
                 for (var key in json.shortcodes) {
                     let shortcode = json.shortcodes[key];
-                    select.append('<option value="' + shortcode.class + '">' + shortcode.title + '</option>');
+                    select.append('<option value="' + shortcode.tag + '">' + shortcode.title + '</option>');
                 }
 
                 select.on('change', function() {
                     let selectedShortcode = {
-                        'class': select.val()
+                        'tag': select.val()
                     }
 
                     template.data('selectedShortcode', selectedShortcode)
-                    template.dialog('option', 'onShortcodeClassSelect').call(this);
+                    template.dialog('option', 'onShortcodeTagSelect').call(this);
                 });
 
                 classElement.append('<label>' + json.phrases['shortcode_type'] + '</label>').append(select);
@@ -59,40 +59,48 @@
                     $(this).dialog('option', 'handleEdit').call(this);
             },
 
-            onShortcodeClassSelect: function() {
+            onShortcodeTagSelect: function() {
                 template.find('#shortcode-source').remove();
                 template.find('#shortcode-fields').remove();
 
                 var select = template.find('select');
-                var shortcodeClass = select.val();
-                var shortcode = json.shortcodes[shortcodeClass];
+                var shortcodeTag = select.val();
+                var shortcode = json.shortcodes[shortcodeTag];
 
                 // TODO: Optionally this can be done with an additional get request and then cached
                 // to improve performance with large datasets.
                 var source = shortcode.source;
-
-                var sourceElement = $('<div class="field" id="shortcode-source"></div>');
-                var select = $('<select name="id" class="select"><option value="" disabled selected>' + json.phrases['select_source'] + '</option></select>');
-                for (var key in source) {
-                    select.append('<option value="' + key + '">' + source[key] + '</option>');
-                }
-
-                select.on('change', function() {
+                if (source.length == 0) {
+                    // Not a DataObject so no ID
                     let selectedShortcode = template.data('selectedShortcode')
-                    selectedShortcode['id'] = select.val();
+                    selectedShortcode['id'] = 0;
                     template.data('selectedShortcode', selectedShortcode)
                     template.dialog('option', 'onShortcodeSourceSelect').call(this);
-                });
+                } else {
+                    // Add dropdown to select source
+                    var sourceElement = $('<div class="field" id="shortcode-source"></div>');
+                    var select = $('<select name="id" class="select"><option value="" disabled selected>' + json.phrases['select_source'] + '</option></select>');
+                    for (var key in source) {
+                        select.append('<option value="' + key + '">' + source[key] + '</option>');
+                    }
 
-                sourceElement.append('<label>' + json.phrases['shortcode_source'] + '</label>').append(select);
-                template.find('.dialog-content').append(sourceElement);
+                    select.on('change', function() {
+                        let selectedShortcode = template.data('selectedShortcode')
+                        selectedShortcode['id'] = select.val();
+                        template.data('selectedShortcode', selectedShortcode)
+                        template.dialog('option', 'onShortcodeSourceSelect').call(this);
+                    });
+
+                    sourceElement.append('<label>' + json.phrases['shortcode_source'] + '</label>').append(select);
+                    template.find('.dialog-content').append(sourceElement);
+                }
             },
 
             onShortcodeSourceSelect: function() {
                 template.find('#shortcode-fields').remove();
 
                 var selectedShortcode = template.data('selectedShortcode');
-                var shortcode = json.shortcodes[selectedShortcode.class];
+                var shortcode = json.shortcodes[selectedShortcode.tag];
                 var fields = shortcode.fields;
                 var fieldsElement = $('<div id="shortcode-fields"></div>');
 
@@ -109,7 +117,7 @@
                             break;
 
                         case 'select':
-                            input = $('<select name="' + key + '" class="select"><option value="" disabled selected>' + ((placeholder == '') ? label : placeholder) + '</option></select>');
+                            input = $('<select name="' + key + '" class="select"><option value="" disabled selected>' + ((placeholder == '') ? capitalizeLabel(label) : placeholder) + '</option></select>');
                             for (var option in fields[key].options || {})
                                 input.append('<option value="' + option + '">' + fields[key].options[option] + '</option>');
                             break;
@@ -117,11 +125,11 @@
                         case 'radiogroup':
                             input = $('<div class="radiogroup" name="' + key + '"></div>');
                             for (var option in fields[key].options || {})
-                                input.append('<span class="radio"><input type="radio" name="' + key + '" value="' + option + '"><label>' + fields[key].options[option] + '</label></span>');
+                                input.append('<span class="radio"><input type="radio" name="' + key + '" value="' + option + '"><label>' + capitalizeLabel(fields[key].options[option]) + '</label></span>');
                             break;
 
                         case 'checkbox':
-                            input = $('<span class="checkbox"><input type="checkbox" name="' + key + '" value="1"><label>' + ((placeholder == '') ? label : placeholder) + '</label></span>');
+                            input = $('<span class="checkbox"><input type="checkbox" name="' + key + '" value="1"><label>' + ((placeholder == '') ? capitalizeLabel(label) : placeholder) + '</label></span>');
                             break;
 
                         default:
@@ -138,38 +146,42 @@
                             selectedShortcode[target.attr('name')] = target.val();
                         template.data('selectedShortcode', selectedShortcode)
                     });
-                    fieldsElement.append(inputWrapper.append('<label>' + label + '</label>').append(input));
+                    fieldsElement.append(inputWrapper.append('<label>' + capitalizeLabel(label) + '</label>').append(input));
                 }
 
                 template.find('.dialog-content').append(fieldsElement);
             },
 
             onInsert: function() {
-                var shortcodable = tinymce.activeEditor.plugins.shortcodable;
+                const shortcodable = tinymce.activeEditor.plugins.shortcodable;
+                const selectedShortcode = template.data('selectedShortcode');
 
                 if (shortcodable) {
                     $.get('/_shortcodable/shortcode', template.data('selectedShortcode'), function(data) {
-                        shortcodable.insertShortcodeAtCursor(data.shortcode);
+                        shortcodable.insertShortcodeAtCursor(selectedShortcode.tag, data.shortcode);
                     });
                 }
                 $(this).dialog('close');
             },
 
             handleEdit: function() {
-                var shortcode = $(this).data('shortcode');
-                shortcode = shortcode.substring(1, shortcode.length - 1);
+                // This is everything within the placeholder, so it could be [tag]text[/tag]
+                let shortcode = $(this).data('shortcode');
+                const firstEnd = shortcode.indexOf(']');
+                shortcode = shortcode.substring(1, firstEnd);
                 var properties = shortcode.split(' ');
-                var shortcodeClass = properties.shift();
+                var shortcodeTag = properties.shift();
                 var shortcodeProperties = {};
 
                 const regex = /([a-zA-Z0-9-_]+)="([^"]+)\"/g;
-                while (match = regex.exec(shortcode))
+                while (match = regex.exec(shortcode)) {
                     shortcodeProperties[match[1]] = match[2];
+                }
 
-                console.log(shortcodeClass, shortcodeProperties);
+//                 console.log(shortcodeTag, shortcodeProperties);
 
-                var select = template.find('select[name="class"]');
-                select.val(shortcodeClass);
+                var select = template.find('select[name="tag"]');
+                select.val(shortcodeTag);
                 select.trigger('change');
 
                 for (var key in shortcodeProperties) {
@@ -222,7 +234,7 @@
             },
 
             /**
-             * Make sure the editor has flushed all it's buffers before the form is submitted.
+             * Make sure the editor has flushed all its buffers before the form is submitted.
              */
             'from .cms-edit-form': {
                 onbeforesubmitform: function(e) {
@@ -244,4 +256,8 @@
             },
         });
     });
+
+    function capitalizeLabel(val) {
+        return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+    }
 })(jQuery);

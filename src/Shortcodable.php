@@ -54,6 +54,13 @@ class Shortcodable extends ViewableData
         }, self::get_shortcodable_classes());
     }
 
+    public static function get_shortcodable_tags()
+    {
+        return array_map(function ($class) {
+            return $class::config()->get('shortcode');
+        }, self::get_shortcodable_classes());
+    }
+
     public static function get_class_by_classname($classname)
     {
         $classes = self::get_shortcodable_classes();

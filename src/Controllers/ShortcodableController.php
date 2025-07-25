@@ -88,12 +88,20 @@ class ShortcodableController extends LeftAndMain
                 }
             }
 
-            $fields['shortcodes'][$classname] = array(
-                'class' => $classname,
-                'title' => singleton($class)->singular_name(),
-                'source' => singleton($class)->hasMethod('getShortcodableRecords') ?
+            $source = [];
+            if (is_subclass_of(singleton($class), DataObject::class)) {
+                $source = singleton($class)->hasMethod('getShortcodableRecords') ?
                     singleton($class)->getShortcodableRecords() :
-                    $class::get()->map()->toArray(),
+                    $class::get()->map()->toArray();
+            }
+
+            $tag = $class::config()->get('shortcode');
+
+            $fields['shortcodes'][$tag] = array(
+//                 'class' => $classname,
+                'tag' => $tag,
+                'title' => singleton($class)->singular_name(),
+                'source' => $source,
                 'fields' => $properties,
             );
         }
@@ -111,25 +119,29 @@ class ShortcodableController extends LeftAndMain
      */
     public function shortcode()
     {
-        $classname = $this->request->getVar('class');
-        $class = Shortcodable::get_class_by_classname($classname);
-        $validClasses = Shortcodable::get_shortcodable_classes();
+        $tag = $this->request->getVar('tag');
+        $validTags = Shortcodable::get_shortcodable_tags();
+
+//         $classname = $this->request->getVar('class');
+//         $class = Shortcodable::get_class_by_classname($classname);
+//         $validClasses = Shortcodable::get_shortcodable_classes();
         $id = $this->request->getVar('id');
 
         // Optional improvement: instead of fetching the entire object, just check if the class exists and has the ID
-        if (
-            $id &&
-            is_subclass_of($class, DataObject::class) &&
-            in_array($class, $validClasses) &&
-            $object = $class::get()->byID($id)
-        ) {
+//         if (
+//             $id &&
+//             is_subclass_of($class, DataObject::class) &&
+//             in_array($class, $validClasses) &&
+//             $object = $class::get()->byID($id)
+//         ) {
+        if (in_array($tag, $validTags)) {
             $this->response->addHeader('Content-Type', 'application/json');
 
             $vars = $this->request->getVars();
-            $filteredVars = array_diff_key($vars, array_flip(['class', 'id']));
+            $filteredVars = array_diff_key($vars, array_flip(['tag', 'id']));
 
             return json_encode([
-                'shortcode' => self::build_shortcode($classname, $id, $filteredVars)
+                'shortcode' => self::build_shortcode($tag, $id, $filteredVars)
             ]);
         } else {
             $this->httpError(404);
@@ -137,16 +149,16 @@ class ShortcodableController extends LeftAndMain
     }
 
     /**
-     * Build a shortcode from a class, id and attributes
+     * Build a shortcode from a tag, id and attributes
      *
-     * @param string $class The class name
+     * @param string $tag The tag name
      * @param int $id The object id
      * @param array $attributes The shortcode attributes
      * @return string The shortcode
      */
-    private static function build_shortcode($class, $id, $attributes)
+    private static function build_shortcode($tag, $id, $attributes)
     {
-        $shortcode = '[' . $class;
+        $shortcode = '[' . $tag;
         if ($id)
             $shortcode .= ' id="' . $id . '"';
 
