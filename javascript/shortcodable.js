@@ -119,7 +119,7 @@
                         case 'select':
                             input = $('<select name="' + key + '" class="select"><option value="" disabled selected>' + ((placeholder == '') ? capitalizeLabel(label) : placeholder) + '</option></select>');
                             for (var option in fields[key].options || {})
-                                input.append('<option value="' + option + '">' + fields[key].options[option] + '</option>');
+                                input.append('<option value="' + option + '">' + capitalizeLabel(fields[key].options[option]) + '</option>');
                             break;
 
                         case 'radiogroup':
@@ -169,7 +169,7 @@
                 let shortcode = $(this).data('shortcode');
                 const firstEnd = shortcode.indexOf(']');
                 shortcode = shortcode.substring(1, firstEnd);
-                var properties = shortcode.split(' ');
+                var properties = shortcode.split(',');
                 var shortcodeTag = properties.shift();
                 var shortcodeProperties = {};
 

@@ -160,11 +160,11 @@ class ShortcodableController extends LeftAndMain
     {
         $shortcode = '[' . $tag;
         if ($id)
-            $shortcode .= ' id="' . $id . '"';
+            $shortcode .= ',id="' . $id . '"';
 
         if ($attributes)
             foreach ($attributes as $key => $value) {
-                $shortcode .= ' ' . $key . '="' . $value . '"';
+                $shortcode .= ',' . $key . '="' . $value . '"';
             }
 
         $shortcode .= ']';
