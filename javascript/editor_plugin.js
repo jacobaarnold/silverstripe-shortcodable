@@ -25,7 +25,8 @@
             }
 
             function insertPlaceholders(content) {
-                return content.replace(/(\[[A-z0-9_]+(,[A-z0-9_]+="[^"]+")*\](.*?)\[\/[A-z0-9_]+\])/g, function (match, shortcode) {
+                // Don't match short codes with text between markers since those are legacy
+                return content.replace(/(\[[A-z0-9_]+(,[A-z0-9_]+="[^"]+")*\]\[\/[A-z0-9_]+\])/g, function (match, shortcode) {
                     return shortcodePlaceholderTemplate
                         .replace('%shortcode%', shortcode);
                 });
@@ -33,7 +34,7 @@
 
             function stripPlaceholders(content) {
                 return content.replace(/<sc-marker>([^<]+)<\/sc-marker>/g, function (match, shortcode) {
-                    if (shortcode.match(/\[[A-z0-9_]+(,[A-z0-9_]+="[^"]+")*\](.*?)\[\/[A-z0-9_]+\]/))
+                    if (shortcode.match(/\[[A-z0-9_]+(,[A-z0-9_]+="[^"]+")*\]\[\/[A-z0-9_]+\]/))
                         return shortcode;
                     else
                         return '';

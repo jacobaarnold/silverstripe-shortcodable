@@ -165,7 +165,7 @@
             },
 
             handleEdit: function() {
-                // This is everything within the placeholder, so it could be [tag]text[/tag]
+                // This is everything within the placeholder, so it should be [tag][/tag]
                 let shortcode = $(this).data('shortcode');
                 const firstEnd = shortcode.indexOf(']');
                 shortcode = shortcode.substring(1, firstEnd);
