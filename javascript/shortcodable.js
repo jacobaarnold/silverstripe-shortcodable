@@ -165,10 +165,8 @@
             },
 
             handleEdit: function() {
-                // This is everything within the placeholder, so it should be [tag][/tag]
-                let shortcode = $(this).data('shortcode');
-                const firstEnd = shortcode.indexOf(']');
-                shortcode = shortcode.substring(1, firstEnd);
+                var shortcode = $(this).data('shortcode');
+                shortcode = shortcode.substring(1, shortcode.length - 1);
                 var properties = shortcode.split(',');
                 var shortcodeTag = properties.shift();
                 var shortcodeProperties = {};
@@ -178,7 +176,7 @@
                     shortcodeProperties[match[1]] = match[2];
                 }
 
-//                 console.log(shortcodeTag, shortcodeProperties);
+                console.log(shortcodeTag, shortcodeProperties);
 
                 var select = template.find('select[name="tag"]');
                 select.val(shortcodeTag);

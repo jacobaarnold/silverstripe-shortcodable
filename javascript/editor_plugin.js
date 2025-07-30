@@ -6,18 +6,13 @@
 
             function insertShortcodeAtCursor(tag, shortcode) {
                 let shortcodePlaceholder = shortcodePlaceholderTemplate
-                    .replace('%shortcode%', shortcode + editor.selection.getContent() + '[/' + tag + ']');
+                    .replace('%shortcode%', shortcode);
 
                 let node = editor.selection.getNode();
                 if (node.nodeName === 'SC-MARKER') {
-                    // Editing existing <sc-marker shortcode="[tag param=&quot;&quot;]">
-                    // Find text between shortcode tags
-                    const firstEnd = node.textContent.indexOf(']');
-                    const lastBegin = node.textContent.lastIndexOf('[');
-                    const taggedText = node.textContent.substring(firstEnd + 1, lastBegin);
                     editor.dom.replace(editor.dom.create('sc-marker', {
                         'shortcode': shortcode
-                    }, shortcode + taggedText + '[/' + tag + ']'), node);
+                    }, shortcode), node);
                 } else {
                     // Adding new marker
                     editor.insertContent(shortcodePlaceholder);
@@ -25,8 +20,7 @@
             }
 
             function insertPlaceholders(content) {
-                // Don't match short codes with text between markers since those are legacy
-                return content.replace(/(\[[A-z0-9_]+(,[A-z0-9_]+="[^"]+")*\]\[\/[A-z0-9_]+\])/g, function (match, shortcode) {
+                return content.replace(/(\[[A-z0-9_]+(,[A-z0-9_]+="[^"]+")*\/\])/g, function (match, shortcode) {
                     return shortcodePlaceholderTemplate
                         .replace('%shortcode%', shortcode);
                 });
@@ -34,7 +28,7 @@
 
             function stripPlaceholders(content) {
                 return content.replace(/<sc-marker>([^<]+)<\/sc-marker>/g, function (match, shortcode) {
-                    if (shortcode.match(/\[[A-z0-9_]+(,[A-z0-9_]+="[^"]+")*\]\[\/[A-z0-9_]+\]/))
+                    if (shortcode.match(/\[[A-z0-9_]+(,[A-z0-9_]+="[^"]+")*\/\]/))
                         return shortcode;
                     else
                         return '';
@@ -68,7 +62,7 @@
                 if (e.keyCode === 8 || e.keyCode === 46) {
                     var node = editor.selection.getNode();
                     if (node.nodeName === 'SC-MARKER') {
-                        if (node.textContent.match(/\[[A-z0-9_]+(,[A-z0-9_]+="[^"]+")*\](.*?)\[\/[A-z0-9_]+\]/)) {
+                        if (node.textContent.match(/\[[A-z0-9_]+(,[A-z0-9_]+="[^"]+")*\/\]/)) {
                             // All parts still here, so create updated marker
                             const firstEnd = node.textContent.indexOf(']');
                             shortcode = node.textContent.substring(0, firstEnd + 1);

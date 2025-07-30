@@ -167,7 +167,7 @@ class ShortcodableController extends LeftAndMain
                 $shortcode .= ',' . $key . '="' . $value . '"';
             }
 
-        $shortcode .= ']';
+        $shortcode .= '/]';
 
         return $shortcode;
     }
